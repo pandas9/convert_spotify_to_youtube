@@ -13,12 +13,15 @@ def is_valid_spotify_url(url):
     pattern = r'^https://open\.spotify\.com/playlist/[a-zA-Z0-9]{22}$'
     return bool(re.match(pattern, url))
 
-def create_safe_filename(playlist_url):
+def create_safe_filename(playlist_url, links=False):
     """Create a safe filename from the Spotify playlist URL."""
     # Extract the playlist ID from the URL
     playlist_id = playlist_url.split('/')[-1]
     # Create the filename
-    filename = f"extracted.{playlist_id}.txt"
+    if links:
+        filename = f"extracted.links.{playlist_id}.txt"
+    else:
+        filename = f"extracted.{playlist_id}.txt"
     # Replace any potentially unsafe characters
     filename = re.sub(r'[<>:"/\\|?*]', '_', filename)
     return filename
@@ -38,6 +41,7 @@ def main():
         sys.exit(1)
 
     safe_filename = create_safe_filename(playlist_url)
+    links_filename = create_safe_filename(playlist_url, links=True)
 
     # Initialize the Chrome WebDriver
     options = webdriver.ChromeOptions()
@@ -139,15 +143,13 @@ def main():
                     # Save each URL as we find it
                     with open(safe_filename, 'a', encoding='utf-8') as f:
                         f.write(f"{track_name} by {artist_name}: {youtube_url}\n")
+                    with open(links_filename, 'a', encoding='utf-8') as f:
+                        f.write(f"{youtube_url}\n")
                 else:
                     print(f"No valid URL found for: {track_name} by {artist_name}")
             except Exception as e:
                 print(f"Error finding video for {track_name} by {artist_name}: {str(e)}")
 
-        # Print the final results
-        print("\nTrack Names and YouTube URLs:")
-        for track_name, artist_name, url in youtube_urls:
-            print(f"{track_name} by {artist_name}: {url}")
         print(f"\nResults have been saved to {safe_filename}")
 
     finally:
